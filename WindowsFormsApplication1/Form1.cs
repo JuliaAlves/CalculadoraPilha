@@ -56,7 +56,8 @@ namespace Calculadora
                     if (infixa[i] != ')')
                         operadores.Empilhar(infixa[i]);
                     else
-                        maiorPrecedencia = operadores.Desempilhar();
+                        if(!operadores.EstaVazia())
+                            posfixa += operadores.Desempilhar();
                 }
 
             }
@@ -110,7 +111,7 @@ namespace Calculadora
 
         public double CalcularResultado() 
         {
-            PilhaListaHerdada<double> pilha = new PilhaListaHerdada<double>();
+            PilhaListaHerdada<double> pilha = new PilhaListaHerdada<double>();            
             for(int i=0; i<posfixa.Length;i++)
             {
                 if (!EhOperador(posfixa[i]))
@@ -154,14 +155,20 @@ namespace Calculadora
 
                 if (prefixa[i] == '(' || prefixa[i] == ')' || EhOperador(prefixa[i]))
                     infixa += prefixa[i];
-                    
                 else
                 {
                     valor += prefixa[i];
 
                     if (ehUltimo)
                     {
-                        valores[qtosValores] = Convert.ToDouble(valor);
+                        try
+                        {
+                            valores[qtosValores] = Convert.ToDouble(valor);
+                        }
+                        catch (FormatException erro)
+                        {
+                            MessageBox.Show(erro.Message);
+                        }                        
                         valor = "";
                         infixa += (char)(qtosValores + (int)'A');
                         qtosValores++;
@@ -169,7 +176,15 @@ namespace Calculadora
                     else 
                     if (prefixa[i+1] == '(' || prefixa[i+1] == ')' || EhOperador(prefixa[i+1]))
                     {
-                        valores[qtosValores] = Convert.ToDouble(valor);
+                        try
+                        {
+                            valores[qtosValores] = Convert.ToDouble(valor);
+                        }
+                        catch (FormatException erro)
+                        {
+                            MessageBox.Show(erro.Message);
+                        }
+                        
                         valor = "";
                         infixa += (char)(qtosValores + (int)'A');
                         qtosValores++;
@@ -195,7 +210,43 @@ namespace Calculadora
             else if (digitado == "=")
             {
                 prefixa = edVisor.Text;
-                TransformarEmInfixa();
+
+                //Código para tratamento da prefixa
+                for(int i=0; i<prefixa.Length; i++)
+                {
+                    if (EhOperador(prefixa[i]))
+                    {
+                        if (EhOperador(prefixa[i + 1]))
+                        {
+                            MessageBox.Show("Deve haver parênteses entre dois operadores(Exemplo: x*(-y)");
+                            return;
+                        }                            
+                    }
+                    else
+                    {
+                        //string auxiliar para guardar a prefixa
+                        string outraprefixa = "";
+
+                        if (prefixa[i] == '(')
+                            if (prefixa[i + 1] == '-')
+                            {
+                                //É operador unário
+                                //Agora deve-se colocar um 0 antes do '-' para que o próximo número fique negativo
+
+                                for (int j = 0; j <= i; j++)//Colocando toda a prefixa até o '-' na string auxiliar
+                                    outraprefixa += prefixa[j];
+
+                                outraprefixa += '0';//Coloca o 0 antes do '-'
+                                for(int j = i+1; j<prefixa.Length; j++)//Coloca o resto da prefixa(a partir do '-') na string auxiliar
+                                    outraprefixa += prefixa[j];
+
+                                prefixa = outraprefixa;
+                            }
+                    }
+                    
+                }                
+
+               TransformarEmInfixa();
                 lbInfixa.Text = infixa;
                 TransformarEmPosfixa();
                 lbPosfixa.Text = posfixa;
@@ -204,7 +255,62 @@ namespace Calculadora
             else
                 edVisor.Text += digitado;
         }
+
+        private void edVisor_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.KeyCode == Keys.Enter)
+            {
+                prefixa = edVisor.Text;
+
+                //Código para tratamento da prefixa
+                for (int i = 0; i < prefixa.Length; i++)
+                {
+                    if (EhOperador(prefixa[i]))
+                    {
+                        if (EhOperador(prefixa[i + 1]))
+                        {
+                            MessageBox.Show("Deve haver parênteses entre dois operadores(Exemplo: x*(-y)");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        //string auxiliar para guardar a prefixa
+                        string outraprefixa = "";
+
+                        if (prefixa[i] == '(')
+                            if (prefixa[i + 1] == '-')
+                            {
+                                //É operador unário
+                                //Agora deve-se colocar um 0 antes do '-' para que o próximo número fique negativo
+
+                                for (int j = 0; j <= i; j++)//Colocando toda a prefixa até o '-' na string auxiliar
+                                    outraprefixa += prefixa[j];
+
+                                outraprefixa += '0';//Coloca o 0 antes do '-'
+                                for (int j = i + 1; j < prefixa.Length; j++)//Coloca o resto da prefixa(a partir do '-') na string auxiliar
+                                    outraprefixa += prefixa[j];
+
+                                prefixa = outraprefixa;
+                            }
+                    }
+                }
+            
+
+           TransformarEmInfixa();
+                lbInfixa.Text = infixa;
+                TransformarEmPosfixa();
+                lbPosfixa.Text = posfixa;
+                edResultado.Text = Convert.ToString(CalcularResultado());
+            }            
+        }
+
+        private void btnBackspace_Click(object sender, EventArgs e)
+        {
+            string ret = "";
+            for (int i = 0; i < edVisor.Text.Length - 1; i++)
+                ret += edVisor.Text[i];
+            edVisor.Text = ret;
+        }
     }
 }
-
-
